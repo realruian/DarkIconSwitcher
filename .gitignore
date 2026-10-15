@@ -1,0 +1,7 @@
+# 编译产物、预览应用、扫描结果
+build/
+# 本地 Python 环境
+.venv/
+# 试验过程中的图和旧版本，只留在本地
+archive/
+.DS_Store

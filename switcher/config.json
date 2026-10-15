@@ -1,0 +1,7 @@
+{
+  "restartDock": true,
+  "apps": [
+    { "app": "/Applications/WeChat.app", "dark": "icons/wechat-dark.png" },
+    { "app": "/Applications/Antigravity.app", "dark": "icons/antigravity-dark.png" }
+  ]
+}
