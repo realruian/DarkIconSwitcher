@@ -6,11 +6,13 @@
 
 ## 工作方式
 
-后台程序（`switcher/`）开机自启，没有界面：
+后台程序（`switcher/`）没有界面，也不常驻：由 launchd 在以下时机唤起，处理完就退出，平时不占内存（运行时约 15 MB，每次几秒）。
 
+- 唤起时机：系统设置文件 `~/Library/Preferences/.GlobalPreferences.plist` 变化（切换外观会写它）、配置里的应用包被改动（比如更新）、登录时、每 10 分钟。
+- 唤起后先等设置稳定 1.5 秒再动手；处理期间设置又变了（连续快速切换）就再处理一轮。
 - 系统切到深色时，用 `NSWorkspace.setIcon` 给配置里的应用设置自定义深色图标；切回浅色时恢复原图标。
 - 跟随的是“系统设置 → 外观 → 图标与小组件样式”：选“深色 · 自动”时跟随界面深浅色；选“深色 · 始终”时一直用深色图标；选“浅色”“透明”“着色”时用原图标。
-- 应用更新会冲掉自定义图标。程序会在应用启动时和每 10 分钟检查一次，发现被冲掉就补回。
+- 应用更新会冲掉自定义图标，应用包一被改动程序就会被唤起并补回。
 - 换完图标后会删掉 Dock 的图标缓存再重启 Dock，所以切换外观后 Dock 会闪一下。
 - 日志：`~/Library/Logs/DarkIconSwitcher.log`
 
@@ -44,7 +46,7 @@ switcher/uninstall.sh    # 停止并卸载，同时恢复所有应用的原图�
 2. 把 PNG 放进 `~/Library/Application Support/DarkIconSwitcher/icons/`（同时放一份到 `switcher/icons/` 留底）。
 3. 在那里的 `config.json` 的 `apps` 里加一项：`{ "app": "/Applications/XXX.app", "dark": "icons/xxx-dark.png" }`。
 
-程序每次切换都会重新读配置，不用重启。
+然后重新运行 `switcher/install.sh`，更新“应用被改动时唤起”的监视列表。
 
 ## 做深色图标
 
@@ -83,4 +85,5 @@ find /Applications -maxdepth 2 -name "*.app" -not -path "*/*.app/*" -print0 | xa
 - **没授权时会“改一半”**：系统可能删掉图标文件 `Icon\r`，却留下“有自定义图标”的标记，应用会显示成文件夹。程序会分别检查这两部分，拿到授权后会自动修正。
 - **Dock 有自己的图标缓存**：`$(getconf DARWIN_USER_CACHE_DIR)com.apple.dock.iconcache`。只重启 Dock 会沿用旧缓存，表现为图标“反了”（显示上一次的状态）。
 - **连续快速切换外观**：程序等设置稳定 1.5 秒后才动手，换完再等 1 秒刷新 Dock，避免和 Dock 重启撞车。
+- **不常驻**：早期版本常驻后台，约占 15 MB 内存（其中约 8 MB 是解码图片留下的缓存）。现在改为 launchd 按需唤起（`WatchPaths` + `StartInterval`），换图标后程序自己改动了应用包会再被唤起一次，这一次检查到无事可做就直接退出。
 - **有的应用运行时会自己设 Dock 图标**：比如 Aside。它的深色图标是完整的，但开着时会用白色版覆盖 Dock 图标，外部换图标对它无效。
